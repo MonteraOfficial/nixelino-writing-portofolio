@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prtofolio Nixelino</Prtofolio></title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- SwiperJS CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
+    <!-- PDF.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#134e4a',
+                        accent: '#d97706',
+                        paper: '#fdfbf7',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Merriweather', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* --- GLOBAL STYLES --- */
+        body { background-color: var(--tw-color-paper); color: #334155; }
+
+        /* --- NAVIGATION --- */
+        .nav-container { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); border-color: #e2e8f0; z-index: 50; transition: all 0.3s ease; }
+        .nav-item { position: relative; display: flex; align-items: center; justify-content: center; color: #94a3b8; transition: color 0.3s ease; cursor: pointer; }
+        .nav-item:hover, .nav-item.active { color: #134e4a; }
+        .nav-item::after { content: ''; position: absolute; background-color: #d97706; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); opacity: 0; }
+        .nav-item.active::after { opacity: 1; }
+
+        .nav-tooltip { position: absolute; left: 70px; background-color: #1e293b; color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 500; opacity: 0; pointer-events: none; transform: translateX(-10px); transition: opacity 0.2s, transform 0.2s; white-space: nowrap; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); z-index: 60; }
+        .nav-tooltip::before { content: ''; position: absolute; left: -4px; top: 50%; transform: translateY(-50%); border-width: 4px; border-style: solid; border-color: transparent #1e293b transparent transparent; }
+
+        @media (min-width: 768px) {
+            .nav-container { border-right-width: 1px; overflow: visible; }
+            .nav-item { width: 100%; height: 60px; margin-bottom: 8px; }
+            .nav-item::after { left: 0; top: 50%; transform: translateY(-50%); width: 4px; height: 30px; border-radius: 0 4px 4px 0; }
+            .nav-item:hover .nav-tooltip { opacity: 1; transform: translateX(0); }
+        }
+        @media (max-width: 767px) {
+            .nav-container { border-top-width: 1px; bottom: 0; width: 100%; height: 64px; }
+            .nav-item { flex: 1; height: 100%; flex-direction: column; gap: 4px; }
+            .nav-item svg { width: 24px; height: 24px; }
+            .nav-item::after { top: 0; left: 50%; transform: translateX(-50%); width: 30px; height: 4px; border-radius: 0 0 4px 4px; }
+            .nav-tooltip { display: none; }
+        }
+
+        /* --- ANIMATIONS --- */
+        .hero-animate { animation: fadeUp 1s ease-out forwards; opacity: 0; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in-section { opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease-out, transform 0.8s ease-out; }
+        .is-visible { opacity: 1; transform: translateY(0); }
+
+        /* --- CARDS --- */
+        .doc-card { background: white; border: 1px solid #f1f5f9; border-radius: 0.75rem; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); transition: all 0.3s ease; height: 100%; display: flex; flex-direction: column; cursor: pointer; }
+        .doc-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); border-color: #cbd5e1; }
+        
+        .doc-thumbnail { height: 200px; width: 100%; background: #f8fafc; border-bottom: 1px solid #f1f5f9; overflow: hidden; position: relative; }
+
+        /* PREVIEW STYLES */
+        .text-preview-box { padding: 1.5rem; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: flex-start; background: #fff; }
+        
+        .text-preview-font {
+            font-family: 'Merriweather', serif; font-size: 0.65rem; line-height: 1.8;
+            color: #64748b; height: 100%; overflow: hidden;
+            mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+            word-wrap: break-word; text-align: justify;
+        }
+
+        .fallback-icon { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; color: #cbd5e1; }
+
+        /* Loading shimmer */
+        .text-loading {
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, #f0f0f0 25%, #f8f8f8 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        .doc-content { padding: 1.25rem; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .doc-tag { font-size: 0.7rem; font-weight: 700; color: #d97706; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+        .doc-title { font-family: 'Merriweather', serif; font-size: 1.15rem; font-weight: 700; color: #1e293b; line-height: 1.3; text-transform: capitalize; }
+
+        /* --- MODAL --- */
+        #ebookModal { position: fixed; inset: 0; z-index: 100; background-color: rgba(15, 23, 42, 0.95); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        #ebookModal.visible { opacity: 1; pointer-events: auto; }
+        #modalContentBox { background-color: white; width: 98vw; max-width: 1800px; height: 95vh; border-radius: 0.5rem; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); transform: scale(0.95); transition: transform 0.3s ease; }
+        #ebookModal.visible #modalContentBox { transform: scale(1); }
+
+        #pdfContainer { flex-grow: 1; width: 100%; position: relative; background-color: #f1f5f9; }
+        .pdf-viewer-frame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+        
+        .skill-track { background-color: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden; }
+        .skill-progress { background-color: #134e4a; height: 100%; width: 0; border-radius: 4px; transition: width 1s ease; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- NAVIGATION -->
+    <nav class="nav-container fixed flex md:flex-col md:w-20 md:h-full w-full h-16 bottom-0 left-0 md:top-0 justify-around md:justify-center md:gap-8 px-2 md:px-0">
+        <a href="#hero" class="nav-item" data-target="hero">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <span class="nav-tooltip">Home</span>
+        </a>
+        <a href="#about" class="nav-item" data-target="about">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            <span class="nav-tooltip">About</span>
+        </a>
+        <a href="#essays" class="nav-item" data-target="essays">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+            <span class="nav-tooltip">Essays</span>
+        </a>
+        <a href="#stories" class="nav-item" data-target="stories">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+            <span class="nav-tooltip">Stories</span>
+        </a>
+        <a href="#archive" class="nav-item" data-target="archive">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+            <span class="nav-tooltip">Archive</span>
+        </a>
+        <a href="#skills" class="nav-item" data-target="skills">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            <span class="nav-tooltip">Skills</span>
+        </a>
+        <a href="#contact" class="nav-item" data-target="contact">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
+            <span class="nav-tooltip">Contact</span>
+        </a>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <div class="md:pl-20 pb-20 md:pb-0 w-full overflow-x-hidden">
+        
+        <!-- Hero Section -->
+        <section id="hero" class="min-h-screen flex flex-col justify-center items-center text-center p-8 bg-[#fdfbf7] relative">
+            <div class="absolute inset-0 opacity-5 bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')] pointer-events-none"></div>
+            <div class="max-w-4xl z-10 hero-animate">
+                <span class="text-accent tracking-widest uppercase font-bold text-sm mb-4 block">Portfolio</span>
+                <h1 class="text-5xl md:text-7xl lg:text-8xl font-serif font-bold mb-6 text-primary leading-tight">Nixelyno Gabriel Soetanto</h1>
+                <div class="w-24 h-1 bg-accent mx-auto mb-8 rounded-full"></div>
+                <p class="text-xl md:text-2xl text-slate-600 font-light max-w-2xl mx-auto leading-relaxed">Crafting narratives through research, analysis, and creative exploration.</p>
+                <div class="mt-12 flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="#essays" class="px-8 py-3 bg-primary text-white rounded-md font-medium hover:bg-[#0d3b38] transition shadow-lg transform hover:-translate-y-1">Read Essays</a>
+                    <a href="#about" class="px-8 py-3 border border-slate-300 text-slate-700 rounded-md font-medium hover:bg-white hover:border-primary transition">About Me</a>
+                </div>
+            </div>
+            <div class="absolute bottom-10 animate-bounce text-slate-400">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about" class="fade-in-section min-h-screen flex flex-col md:flex-row items-center py-20 px-4 md:px-12 bg-white">
+            <div class="w-full md:w-5/12 p-4 md:p-8 flex justify-center">
+                <img src="Assets/person.jpg" alt="Profile" class="rounded-lg shadow-xl w-full max-w-sm object-cover grayscale hover:grayscale-0 transition duration-700">
+            </div>
+            <div class="w-full md:w-7/12 p-6 md:p-12">
+                <h2 class="text-4xl md:text-5xl font-serif font-bold mb-6 text-primary">About Me</h2>
+                <div class="prose prose-lg text-slate-600 font-sans">
+                    <p class="mb-4">A passionate and imaginative student with a strong interest in creative writing across various forms, including fiction, essay writing, and scriptwriting. My experience in writing short stories, essays, and collaborative creative projects has strengthened my skills in storytelling, language use, and idea development. I enjoy exploring different perspectives and crafting narratives that inspire and connect with readers. I am eager to gain hands-on experience in the writing field to further develop my craft and understand how creativity and communication can work together to create impactful written works.</p>
+                    <!-- <p class="mb-4">Whether I'm dissecting historical events or imagining future worlds, my goal is to present information in a format that is both clear and engaging.</p> -->
+                </div>
+                <div class="mt-8 pt-8 border-t border-slate-100 flex items-center gap-4">
+                    <span class="text-sm font-semibold text-accent uppercase tracking-wider">Born Nov 2008</span>
+                    <span class="h-1 w-1 rounded-full bg-slate-300"></span>
+                    <span class="text-sm text-slate-500">Based in Indonesia</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Essays -->
+        <section id="essays" class="fade-in-section py-24 bg-[#fdfbf7]">
+            <div class="container mx-auto px-4 md:px-8">
+                <div class="flex justify-between items-end mb-12 border-b border-slate-200 pb-4">
+                    <div>
+                        <span class="text-accent font-bold uppercase text-xs">Research</span>
+                        <h2 class="text-3xl md:text-4xl font-serif font-bold text-primary mt-2">Essays</h2>
+                    </div>
+                </div>
+                <div class="swiper flat-swiper" id="essays-swiper">
+                    <div class="swiper-wrapper py-4"><!-- JS Injected --></div>
+                    <div class="swiper-pagination"></div>
+                    <div class="swiper-button-next"></div><div class="swiper-button-prev"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stories -->
+        <section id="stories" class="fade-in-section py-24 bg-white">
+            <div class="container mx-auto px-4 md:px-8">
+                <div class="flex justify-between items-end mb-12 border-b border-slate-200 pb-4">
+                    <div>
+                        <span class="text-accent font-bold uppercase text-xs">Narrative</span>
+                        <h2 class="text-3xl md:text-4xl font-serif font-bold text-primary mt-2">Stories</h2>
+                    </div>
+                </div>
+                <div class="swiper flat-swiper" id="stories-swiper">
+                    <div class="swiper-wrapper py-4"><!-- JS Injected --></div>
+                    <div class="swiper-pagination"></div>
+                    <div class="swiper-button-next"></div><div class="swiper-button-prev"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Archive -->
+        <section id="archive" class="fade-in-section py-24 bg-[#f1f5f9]">
+            <div class="container mx-auto px-4 md:px-8">
+                <div class="text-center max-w-2xl mx-auto mb-16">
+                    <h2 class="text-3xl md:text-4xl font-serif font-bold text-primary mb-4">The Archive</h2>
+                </div>
+                <div id="archiveGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"><!-- JS Injected --></div>
+            </div>
+        </section>
+
+        <!-- Skills -->
+        <section id="skills" class="fade-in-section py-24 bg-white">
+            <div class="container mx-auto px-4 md:px-8 max-w-5xl">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <h2 class="text-3xl md:text-4xl font-serif font-bold text-primary mb-6">Proficiencies</h2>
+                        <p class="text-slate-600 mb-8 leading-relaxed">My toolkit combines traditional literacy with modern digital capabilities.</p>
+                    </div>
+                    <div class="space-y-8">
+                        <div class="skill-item"><div class="flex justify-between mb-2"><span class="font-bold text-slate-700">Creative Writing</span><span class="text-accent text-sm">90%</span></div><div class="skill-track"><div class="skill-progress" data-width="90%"></div></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact -->
+        <section id="contact" class="fade-in-section py-24 bg-primary text-white text-center">
+            <div class="container mx-auto px-4">
+                <h2 class="text-4xl md:text-5xl font-serif font-bold mb-8">Get In Touch</h2>
+                <a href="mailto:ken.nathaniel09@gmail.com" class="inline-flex items-center gap-2 bg-accent hover:bg-yellow-600 text-white font-bold py-4 px-10 rounded shadow-lg transition transform hover:-translate-y-1">Send an Email</a>
+                <footer class="mt-20 border-t border-emerald-800 pt-8 text-emerald-400 text-sm">
+                    <p>&copy; <span id="year"></span> Nixelyno Gabriel. All rights reserved.</p>
+                </footer>
+            </div>
+        </section>
+    </div>
+
+    <!-- PDF MODAL -->
+    <div id="ebookModal">
+        <div id="modalContentBox">
+            <header class="flex-none p-4 border-b border-slate-200 flex justify-between items-center bg-white">
+                <h2 id="modalTitle" class="font-serif font-bold text-xl text-primary truncate"></h2>
+                <button id="closeModalButton" class="text-slate-400 hover:text-red-500 text-3xl leading-none px-2">&times;</button>
+            </header>
+            
+            <!-- PDF Viewer Container -->
+            <div id="pdfContainer">
+                <!-- Iframe injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script>
+        // --- CONFIG ---
+        let works = []; 
+        const CREATION_FOLDER = 'CREATION/';
+        const LIST_FILE = 'list.json';
+        
+        // --- ⚙️ SETTINGS: ADJUST THIS NUMBER TO CHANGE PREVIEW LENGTH ---
+        const PREVIEW_CHAR_LIMIT = 800; 
+
+        const modal = document.getElementById('ebookModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const pdfContainer = document.getElementById('pdfContainer');
+
+        // --- HELPER: ROBUST TEXT EXTRACTION ---
+        async function getPdfPreviewText(url) {
+            try {
+                // Try to load the PDF
+                const loadingTask = pdfjsLib.getDocument(url);
+                const pdf = await loadingTask.promise;
+                const page = await pdf.getPage(1);
+                const textContent = await page.getTextContent();
+                
+                // Extract text items
+                let fullText = textContent.items.map(item => item.str).join(' ');
+                
+                // Check if empty
+                if (!fullText || fullText.trim().length === 0) {
+                    return null; // Return null to trigger fallback
+                }
+                
+                // --- TRUNCATE LOGIC (Cut at space) ---
+                if(fullText.length > PREVIEW_CHAR_LIMIT) {
+                    // Cut at limit
+                    fullText = fullText.substring(0, PREVIEW_CHAR_LIMIT);
+                    // Back up to the last space to avoid cutting a word in half
+                    fullText = fullText.substring(0, fullText.lastIndexOf(" ")) + "...";
+                }
+                
+                return fullText;
+
+            } catch (error) {
+                // If this fails (Security Block, 404, or corrupt file), return NULL
+                return null; 
+            }
+        }
+
+        // --- LOAD LIST ---
+        async function loadContentSystem() {
+            try {
+                const response = await fetch(CREATION_FOLDER + LIST_FILE);
+                if (!response.ok) throw new Error("Could not load list.json");
+                
+                const filesList = await response.json();
+                
+                // 1. Initial Map (Set Loading State)
+                const initialWorks = filesList.map((item, index) => {
+                    let cleanFilename = item.filename;
+                    if (!cleanFilename.toLowerCase().endsWith('.pdf')) {
+                        cleanFilename += '.pdf';
+                    }
+                    const cleanTitle = cleanFilename.replace(/\.pdf$/i, '').replace(/[-_]/g, ' ');
+
+                    return {
+                        id: `work-${index}`,
+                        filename: cleanFilename,
+                        title: cleanTitle,
+                        category: item.category.toLowerCase(),
+                        excerpt: null // Null indicates loading
+                    };
+                });
+
+                works = initialWorks;
+                
+                // Render Cards with Loading State
+                renderContent();
+
+                // 2. Fetch Text (Concurrent)
+                await Promise.all(works.map(async (work) => {
+                    const text = await getPdfPreviewText(CREATION_FOLDER + work.filename);
+                    
+                    // Update ALL instances of this card (e.g., both in Slider AND Archive)
+                    const cardBoxes = document.querySelectorAll(`.doc-card[data-work-id="${work.id}"] .text-preview-box`);
+                    
+                    cardBoxes.forEach(cardBox => {
+                        if (text) {
+                            // Success: Show Text
+                            cardBox.innerHTML = `<div class="text-preview-font">${text}</div>`;
+                        } else {
+                            // Failure (Security/Error): Show Icon Fallback
+                            cardBox.innerHTML = `
+                                <div class="fallback-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M16 13H8"></path><path d="M16 17H8"></path><path d="M10 9H8"></path></svg>
+                                    <span class="text-xs mt-2 uppercase tracking-widest">PDF Document</span>
+                                </div>
+                            `;
+                        }
+                    });
+                }));
+
+            } catch (error) {
+                console.error("System Error:", error);
+                document.getElementById('archiveGrid').innerHTML = `
+                    <div class="col-span-3 text-center p-8 bg-red-50 text-red-600 rounded">
+                        <p class="font-bold">System Error</p>
+                        <p class="text-sm mt-2">Could not load list.json. Ensure Local Server is running.</p>
+                    </div>`;
+            }
+        }
+
+        // --- HTML GENERATORS ---
+        function createCardHTML(item) {
+            // Initial state is "Loading Shimmer"
+            const thumb = `
+                <div class="text-preview-box">
+                    <div class="text-loading"></div>
+                </div>
+            `;
+            
+            return `
+                <div class="doc-card" data-work-id="${item.id}">
+                    <div class="doc-thumbnail">${thumb}</div>
+                    <div class="doc-content">
+                        <div><div class="doc-tag">${item.category}</div><h3 class="doc-title">${item.title}</h3></div>
+                    </div>
+                </div>`;
+        }
+
+        function renderContent() {
+            document.querySelector('#essays-swiper .swiper-wrapper').innerHTML = works.filter(w => w.category === 'essay').map(w => `<div class="swiper-slide">${createCardHTML(w)}</div>`).join('');
+            document.querySelector('#stories-swiper .swiper-wrapper').innerHTML = works.filter(w => w.category === 'story').map(w => `<div class="swiper-slide">${createCardHTML(w)}</div>`).join('');
+            document.getElementById('archiveGrid').innerHTML = works.map(w => createCardHTML(w)).join('');
+            initSwipers();
+        }
+
+        // --- OPEN PDF ---
+        function openReader(id) {
+            const work = works.find(w => w.id === id);
+            if(!work) return;
+
+            modalTitle.textContent = work.title;
+            modal.classList.add('visible');
+            document.body.style.overflow = 'hidden'; 
+            
+            const safeFilename = encodeURIComponent(work.filename);
+            const pdfPath = CREATION_FOLDER + safeFilename;
+            
+            pdfContainer.innerHTML = `<iframe src="${pdfPath}" class="pdf-viewer-frame" allowfullscreen></iframe>`;
+        }
+
+        function closeReader() {
+            modal.classList.remove('visible');
+            document.body.style.overflow = '';
+            pdfContainer.innerHTML = ''; 
+        }
+
+        function initSwipers() {
+            document.querySelectorAll('.flat-swiper').forEach(el => {
+                if(el.swiper) el.swiper.destroy(true, true);
+                new Swiper(el, {
+                    slidesPerView: 1, spaceBetween: 20,
+                    pagination: { el: el.querySelector('.swiper-pagination'), clickable: true },
+                    navigation: { nextEl: el.querySelector('.swiper-button-next'), prevEl: el.querySelector('.swiper-button-prev') },
+                    breakpoints: { 640: { slidesPerView: 2 }, 1024: { slidesPerView: 3 } }
+                });
+            });
+        }
+
+        // --- EVENTS ---
+        document.addEventListener('click', (e) => {
+            const card = e.target.closest('.doc-card');
+            if (card) openReader(card.dataset.workId);
+            if (e.target.id === 'closeModalButton' || e.target === modal) closeReader();
+        });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeReader(); });
+
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('year').textContent = new Date().getFullYear();
+            loadContentSystem();
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                        const activeNav = document.querySelector(`.nav-item[data-target="${entry.target.id}"]`);
+                        if(activeNav) activeNav.classList.add('active');
+
+                        if(entry.target.id === 'skills') document.querySelectorAll('.skill-progress').forEach(b => b.style.width = b.dataset.width);
+                        if(entry.target.id !== 'hero') entry.target.classList.add('is-visible');
+                    }
+                });
+            }, { threshold: 0.15 });
+            document.querySelectorAll('section').forEach(s => observer.observe(s));
+        });
+    </script>
+</body>
+</html>
